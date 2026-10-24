@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+</head>
+<body style="background:#111; color:#fff; padding:20px;">
+    <h1>⚙️ 관리자 대시보드</h1>
+    <div style="background:#222; padding:15px; margin-bottom:20px;">
+        <h3>스크립트 업로드</h3>
+        <input type="text" id="s_name" placeholder="스크립트 이름"><br><br>
+        <textarea id="s_code" placeholder="루아 코드" rows="4" cols="50"></textarea><br><br>
+        <button onclick="uploadScript()">업로드</button>
+    </div>
+
+    <div style="background:#222; padding:15px;">
+        <h3>라이센스 키 발급</h3>
+        <input type="text" id="k_script" placeholder="연동할 스크립트 이름">
+        <select id="k_dur">
+            <option value="1">1일</option>
+            <option value="7">7일</option>
+            <option value="life">영구</option>
+        </select>
+        <button onclick="genKey()">키 발급</button>
+        <h4 id="key_res" style="color:#00ff00;"></h4>
+    </div>
+
+    <script>
+        async function uploadScript() {
+            await fetch('/api/admin/script', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: document.getElementById('s_name').value, lua_code: document.getElementById('s_code').value})
+            });
+            alert("업로드 완료!");
+        }
+        async function genKey() {
+            const res = await fetch('/api/admin/key', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({script_name: document.getElementById('k_script').value, duration: document.getElementById('k_dur').value})
+            });
+            const data = await res.json();
+            if(data.success) document.getElementById('key_res').innerText = "발급된 키: " + data.key;
+        }
+    </script>
+</body>
+</html>
