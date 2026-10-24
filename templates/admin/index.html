@@ -6,6 +6,16 @@
 </head>
 <body style="background:#111; color:#fff; padding:20px;">
     <h1>⚙️ 관리자 대시보드</h1>
+    
+    <div style="background:#222; padding:15px; margin-bottom:20px;">
+        <h3>관리자 로그인 / 회원가입</h3>
+        <input type="text" id="u_name" placeholder="아이디">
+        <input type="password" id="u_pw" placeholder="비밀번호">
+        <input type="text" id="u_code" placeholder="마스터 발급 코드(가입시)">
+        <button onclick="login()">로그인</button>
+        <button onclick="register()">회원가입</button>
+    </div>
+
     <div style="background:#222; padding:15px; margin-bottom:20px;">
         <h3>스크립트 업로드</h3>
         <input type="text" id="s_name" placeholder="스크립트 이름"><br><br>
@@ -23,9 +33,32 @@
         </select>
         <button onclick="genKey()">키 발급</button>
         <h4 id="key_res" style="color:#00ff00;"></h4>
+        <button onclick="loadKeys()">키 목록 새로고침</button>
+        <table id="keysTable" style="width:100%; text-align:left; margin-top:10px;">
+            <tr><th>키</th><th>스크립트</th><th>IP</th><th>HWID</th><th>초기화</th></tr>
+        </table>
     </div>
 
     <script>
+        async function login() {
+            const res = await fetch('/api/login', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: document.getElementById('u_name').value, password: document.getElementById('u_pw').value})
+            });
+            if(res.ok) alert("로그인 성공!"); else alert("실패");
+        }
+        async function register() {
+            const res = await fetch('/api/register', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: document.getElementById('u_name').value, 
+                    password: document.getElementById('u_pw').value,
+                    invite_code: document.getElementById('u_code').value
+                })
+            });
+            const data = await res.json();
+            alert(data.message);
+        }
         async function uploadScript() {
             await fetch('/api/admin/script', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -39,7 +72,20 @@
                 body: JSON.stringify({script_name: document.getElementById('k_script').value, duration: document.getElementById('k_dur').value})
             });
             const data = await res.json();
-            if(data.success) document.getElementById('key_res').innerText = "발급된 키: " + data.key;
+            if(data.success) { document.getElementById('key_res').innerText = "발급된 키: " + data.key; loadKeys(); }
+        }
+        async function loadKeys() {
+            const res = await fetch('/api/admin/keys');
+            const keys = await res.json();
+            const t = document.getElementById('keysTable');
+            t.innerHTML = '<tr><th>키</th><th>스크립트</th><th>IP</th><th>HWID</th><th>초기화</th></tr>';
+            keys.forEach(k => {
+                t.innerHTML += `<tr><td>${k.key}</td><td>${k.script_name}</td><td>${k.ip}</td><td>${k.hwid}</td><td><button onclick="resetKey(${k.id})">초기화</button></td></tr>`;
+            });
+        }
+        async function resetKey(id) {
+            await fetch('/api/admin/reset', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: id}) });
+            loadKeys();
         }
     </script>
 </body>
